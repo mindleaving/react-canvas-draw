@@ -2,18 +2,19 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Safely_detecting_option_support
 let passiveSupported = false;
 try {
-  const options = {
+  const options: AddEventListenerOptions = {
     get passive() {
       passiveSupported = true;
       return false;
     }
   };
-  window.addEventListener("test", options, options);
-  window.removeEventListener("test", options, options);
-} catch(e) {
+  const eventHandler = () => {};
+  window.addEventListener("click", eventHandler, options);
+  window.removeEventListener("click", eventHandler);
+} catch {
   passiveSupported = false;
 }
 
-export default function makePassiveEventOption(passive) {
+export default function makePassiveEventOption(passive?: boolean): AddEventListenerOptions | boolean | undefined {
   return passiveSupported ? { passive } : passive;
 }
