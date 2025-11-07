@@ -1,7 +1,8 @@
-import { CanvasDraw, OngoingDrawing } from '../';
+import './App.css';
+import { CanvasDraw } from '../lib/CanvasDraw';
+import { OngoingDrawing } from '../lib/helpers/OngoingDrawing';
 import { DefaultCanvasHeight, DefaultCanvasWidth } from '../lib/helpers/constants';
 import type { CanvasDrawOptions, Size } from '../lib/types/frontendTypes';
-import './App.css';
 import { useEffect, useMemo, useState } from 'react';
 
 const imageUrls = [
@@ -27,18 +28,24 @@ const App = () => {
 
     useEffect(() => {
         // let's change the color randomly every 2 seconds. fun!
-        setInterval(() => {
+        const interval = setInterval(() => {
             setColor("#" + Math.floor(Math.random() * 16777215).toString(16));
         }, 2000);
+        return () => {
+            clearInterval(interval);
+        }
     }, []);
 
     useEffect(() => {
         if(imageUrls.length < 2) {
             return;
         }
-        setInterval(() => {
+        const interval = setInterval(() => {
             setBackgroundImgSrc(state => imageUrls.filter(img => img !== state)[0]);
         }, 2000);
+        return () => {
+            clearInterval(interval);
+        }
     }, []);
 
     useEffect(() => {
@@ -173,32 +180,32 @@ const App = () => {
                 <label>Width:</label>
                 <input
                     type="number"
-                    value={width}
-                    onChange={e => setWidth(parseInt(e.target.value, 10))}
+                    defaultValue={width}
+                    onBlur={e => setWidth(parseInt(e.target.value, 10))}
                 />
             </div>
             <div>
                 <label>Height:</label>
                 <input
                     type="number"
-                    value={height}
-                    onChange={e => setHeight(parseInt(e.target.value, 10))}
+                    defaultValue={height}
+                    onBlur={e => setHeight(parseInt(e.target.value, 10))}
                 />
             </div>
             <div>
                 <label>Brush-Radius:</label>
                 <input
                     type="number"
-                    value={brushRadius}
-                    onChange={e => setBrushRadius(parseInt(e.target.value, 10))}
+                    defaultValue={brushRadius}
+                    onBlur={e => setBrushRadius(parseInt(e.target.value, 10))}
                 />
             </div>
             <div>
                 <label>Lazy-Radius:</label>
                 <input
                     type="number"
-                    value={lazyRadius}
-                    onChange={e => setLazyRadius(parseInt(e.target.value, 10))}
+                    defaultValue={lazyRadius}
+                    onBlur={e => setLazyRadius(parseInt(e.target.value, 10))}
                 />
             </div>
         </div>
@@ -218,19 +225,24 @@ const App = () => {
             The following is a disabled canvas with a hidden grid that we use to
             load & show your saved drawing.
         </p>
-        <button
-            onClick={() => {
-                const savedDataJson = localStorage.getItem("savedDrawing");
-                if(!savedDataJson) {
-                    return;
-                }
-                loadDemoDrawing.load(savedDataJson);
-            }}
-        >
+        <p>
             Load what you saved previously into the following canvas. Either by
             calling `loadSaveData()` on the component's reference or passing it
             the `saveData` prop:
-        </button>
+        </p>
+        <div className="tools" style={{ height: '60px' }}>
+            <button
+                onClick={() => {
+                    const savedDataJson = localStorage.getItem("savedDrawing");
+                    if(!savedDataJson) {
+                        return;
+                    }
+                    loadDemoDrawing.load(savedDataJson);
+                }}
+            >
+                Load
+            </button>
+        </div>
         <CanvasDraw
             drawing={loadDemoDrawing}
             drawOptions={{

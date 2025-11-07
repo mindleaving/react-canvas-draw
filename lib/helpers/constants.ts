@@ -22,7 +22,7 @@ export const DefaultDrawOptions: CanvasDrawOptions = {
         hideGridY: false,
         gridSizeY: 25,
         gridColor: "rgba(150,150,150,0.17)",
-        gridLineWidth: 0.5
+        gridLineWidth: 1
     },
     zoomExtents: { min: 0.33, max: 3 },
     immediateLoading: false,

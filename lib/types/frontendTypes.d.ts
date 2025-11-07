@@ -84,6 +84,21 @@ export interface CanvasDrawOptions {
     immediateLoading: boolean;
     drawTimeStepSizeInMilliseconds: number;
 }
+export interface PartialDrawOptions {
+    hideInterface?: boolean;
+    backgroundColor?: string;
+    brushColor?: string;
+    brushRadius?: number;
+    caternary?: Partial<CaternaryOptions>;
+    disabled?: boolean;
+    enablePanAndZoom?: boolean;
+    mouseZoomFactor?: number;
+    clampLinesToDocument?: boolean;
+    grid?: Partial<CanvasDrawGridOptions>;
+    zoomExtents?: ScaleExtents;
+    immediateLoading?: boolean;
+    drawTimeStepSizeInMilliseconds?: number;
+}
 export interface DrawImageProps {
     ctx: CanvasRenderingContext2D;
     img: HTMLImageElement;
@@ -198,3 +213,4 @@ export interface CanvasContextCollection {
     interface?: CanvasWithContext;
     [key:string]: CanvasWithContext | undefined;
 }
+export type GenericObject = { [key: string]: unknown };

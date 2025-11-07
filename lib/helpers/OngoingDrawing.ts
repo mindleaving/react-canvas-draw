@@ -1,4 +1,6 @@
 import type { CanvasDrawOptions, IOngoingDrawing, Line, OnLineCompletedCallback, OnLineRemovedCallback, OnLinesChangedCallback, OnPointAddedCallback, Point, SavedDrawing, Size } from "../types/frontendTypes";
+import { last } from "./collectionHelpers";
+import { distance } from "./pointHelpers";
 import { scaleSavedDrawingToCurrentCanvas } from "./storeHelpers";
 
 export class OngoingDrawing implements IOngoingDrawing {
@@ -20,21 +22,33 @@ export class OngoingDrawing implements IOngoingDrawing {
             this.lineInProgress = {
                 brushColor: drawOptions.brushColor,
                 brushRadius: drawOptions.brushRadius,
-                points: []
+                points: [ point ]
             }
+            this.lineInProgress.points.push();
+            this.onPointAdded();
+            return;
         }
-        this.lineInProgress.points.push(point);
+        const lastPoint = last(this.lineInProgress.points)!;
+        if(distance(point, lastPoint) > 0.5 * drawOptions.brushRadius) {
+            this.lineInProgress.points.push(point);
+            this.onPointAdded();
+        }
     }
     finishLineInProgress = (drawOptions: CanvasDrawOptions) => {
         if(!this.lineInProgress) {
             return;
         }
-        if(this.lineInProgress.points.length >= 2) {
-            this.lineInProgress.brushColor = drawOptions.brushColor;
-            this.lineInProgress.brushRadius = drawOptions.brushRadius;
-            this.lines.push(this.lineInProgress);
-            this.onLineCompleted(this.lineInProgress);
+        if(this.lineInProgress.points.length === 1) {
+            const singlePoint = this.lineInProgress.points[0];
+            this.lineInProgress.points.push({
+                x: singlePoint.x + 1,
+                y: singlePoint.y + 1
+            });
         }
+        this.lineInProgress.brushColor = drawOptions.brushColor;
+        this.lineInProgress.brushRadius = drawOptions.brushRadius;
+        this.lines.push(this.lineInProgress);
+        this.onLineCompleted(this.lineInProgress);
         this.lineInProgress = undefined;
     }
 
@@ -110,6 +124,7 @@ export class OngoingDrawing implements IOngoingDrawing {
         this.lines = rescaledDrawing.lines;
         this.lineInProgress = undefined;
         this.erasedLines = [];
+        this.onLinesChanged();
     }
     eraseAll = () => {
         if(this.lines.length === 0) {

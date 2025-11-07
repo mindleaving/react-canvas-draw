@@ -21,7 +21,7 @@ export class DefaultState implements IStateMachineState {
             return new DisabledState(this.drawing);
         } else if (enablePanAndZoom && e.ctrlKey) {
             e.preventDefault();
-            tools.coordinateSystem.scaleAtClientPoint(mouseZoomFactor * e.deltaY, clientPointFromEvent(e));
+            tools.coordinateSystem.scaleAtClientPoint(-mouseZoomFactor * e.deltaY, clientPointFromEvent(e));
         }
         return this;
     };

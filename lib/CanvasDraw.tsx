@@ -1,18 +1,20 @@
+import './styles/react-canvas-draw.css';
 import { LazyBrush } from "lazy-brush";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import makePassiveEventOption from "./helpers/eventHelpers";
 import { DefaultState } from "./helpers/StateMachineStates/DefaultState";
-import type { CanvasContextCollection, CanvasDrawOptions, CanvasDrawTools, ICoordinateSystem, IOngoingDrawing, IStateMachineState, Line, MouseOrTouchEvent, Size, ViewListener } from "./types/frontendTypes";
+import type { CanvasContextCollection, CanvasDrawOptions, CanvasDrawTools, ICoordinateSystem, IOngoingDrawing, IStateMachineState, Line, MouseOrTouchEvent, PartialDrawOptions, Size, ViewListener } from "./types/frontendTypes";
 import CoordinateSystem from "./helpers/CoordinateSystem";
 import { clearCanvas, copyCanvas, createImage, drawImageToCanvas, drawGrid, drawInterface, drawPoints, drawLines as drawLinesToCanvas, setCanvasSize } from "./helpers/canvasDrawer";
 import { last } from "./helpers/collectionHelpers";
 import { DefaultCanvasWidth, DefaultCanvasHeight, DefaultDrawOptions } from "./helpers/constants";
+import { useDeepEqualityMemo } from './helpers/customHooks';
 
 interface CanvasDrawProps {
     drawing: IOngoingDrawing;
     canvasWidth?: number;
     canvasHeight?: number;
-    drawOptions?: Partial<CanvasDrawOptions>;
+    drawOptions?: PartialDrawOptions;
     className?: string;
     style?: CSSProperties;
     imgSrc?: string;
@@ -35,7 +37,19 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
 
     const effectiveCanvasWidth = useMemo(() => canvasWidth ?? DefaultCanvasWidth, [ canvasWidth ]);
     const effectiveCanvasHeight = useMemo(() => canvasHeight ?? DefaultCanvasHeight, [ canvasHeight ]);
-    const effectiveDrawingOptions = useMemo(() => ({ ...DefaultDrawOptions, ...drawOptions }), [ drawOptions ]);
+    const deepEqualityCheckedDrawOptions: PartialDrawOptions = useDeepEqualityMemo(drawOptions as object);
+    const effectiveDrawingOptions: CanvasDrawOptions = useMemo(() => ({ 
+        ...DefaultDrawOptions, 
+        ...deepEqualityCheckedDrawOptions, 
+        caternary: {
+            ...DefaultDrawOptions.caternary,
+            ...deepEqualityCheckedDrawOptions?.caternary
+        },
+        grid: {
+            ...DefaultDrawOptions.grid,
+            ...deepEqualityCheckedDrawOptions?.grid
+        }
+    }), [ deepEqualityCheckedDrawOptions ]);
     const { zoomExtents, enablePanAndZoom } = effectiveDrawingOptions;
     const canvasContextCollection: CanvasContextCollection = useMemo(() => ({}), []);
     const [ image, setImage ] = useState<HTMLImageElement>();
@@ -55,22 +69,23 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
     const tools = useMemo(() => ({
         coordinateSystem: coordinateSystem,
         lazyBrush: lazyBrush,
-        drawOptions: drawOptions
-    } as CanvasDrawTools), [ lazyBrush, drawOptions, coordinateSystem ]);
+        drawOptions: effectiveDrawingOptions
+    } as CanvasDrawTools), [ lazyBrush, effectiveDrawingOptions, coordinateSystem ]);
     const [ userInputStateMachine, setUserInputStateMachine ] = useState<IStateMachineState>(() => new DefaultState(drawing));
-    const [ hasMouseMoved, setHasMouseMoved ] = useState<boolean>(false);
-    const [ deferRedrawOnViewChange, setDeferRedrawOnViewChange ] = useState<boolean>(false);
-    const [ isRedrawRequired, setIsRedrawRequired ] = useState<boolean>(false);
+    const [ isGridRedrawRequired, setIsGridRedrawRequired ] = useState<boolean>(true);
+    const [ isDrawingRedrawRequired, setIsDrawingRedrawRequired ] = useState<boolean>(true);
+    const [ isInterfaceRedrawRequired, setIsInterfaceRedrawRequired ] = useState<boolean>(true);
     const container = useRef<HTMLDivElement>(null);
 
     const clearLines = useCallback(() => {
-        setIsRedrawRequired(true);
         clearCanvas(canvasContextCollection.drawing!.context);
         clearCanvas(canvasContextCollection.temp!.context);
+        //setIsInterfaceRedrawRequired(true); // Not sure, why interface needs to be redrawn
     }, [ canvasContextCollection ]);
 
     useEffect(() => {
         drawing.rescale({ width: effectiveCanvasWidth, height: effectiveCanvasHeight });
+        setIsDrawingRedrawRequired(true);
     }, [ drawing, effectiveCanvasWidth, effectiveCanvasHeight]);
 
     useEffect(() => {
@@ -84,77 +99,96 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
         coordinateSystem.canvas = canvasContextCollection.interface.canvas;
     }, [ coordinateSystem, canvasContextCollection ]);
 
-    useEffect(() => {
-        // Why is this delayed?
-        setTimeout(() => {
-            const initX = window.innerWidth / 2;
-            const initY = window.innerHeight / 2;
-            lazyBrush.update(
-                { x: initX - chainLength / 4, y: initY },
-                { both: true }
-            );
-            lazyBrush.update(
-                { x: initX + chainLength / 4, y: initY },
-                { both: false }
-            );
-            setHasMouseMoved(true);
-            setIsRedrawRequired(true);
-            clearLines();
-        }, 100);
-    }, [ chainLength, clearLines, lazyBrush]);
-
     const drawImage = useCallback((imgSrc: string) => {
         if(!canvasContextCollection.drawing) {
             return;
         }
-        const drawingContext = canvasContextCollection.drawing!.context;
-        const image = createImage(imgSrc, e => drawImageToCanvas({ ctx: drawingContext, img: e.target as HTMLImageElement }));
+        const gridContext = canvasContextCollection.grid!.context;
+        const image = createImage(imgSrc, e => drawImageToCanvas({ ctx: gridContext, img: e.target as HTMLImageElement }));
         setImage(image);
     }, [ canvasContextCollection ]);
 
-    const loop = useCallback(({ once = false } = {}) => {
-        if (hasMouseMoved || isRedrawRequired) {
-            drawInterface(canvasContextCollection.interface!.context, lazyBrush, effectiveDrawingOptions);
-            setHasMouseMoved(false);
-            setIsRedrawRequired(false);
+    useEffect(() => {
+        if(!imgSrc) {
+            return;
         }
+        drawImage(imgSrc);
+    }, [ imgSrc, drawImage ]);
 
-        if (!once) {
-            window.requestAnimationFrame(() => {
-                loop();
-            });
-        }
-    }, [ canvasContextCollection, hasMouseMoved, isRedrawRequired, lazyBrush, effectiveDrawingOptions]);
+    const drawLazyBrush = useCallback(() => {
+        drawInterface(canvasContextCollection.interface!.context, lazyBrush, effectiveDrawingOptions);
+        setIsInterfaceRedrawRequired(false);
+    }, [canvasContextCollection, lazyBrush, effectiveDrawingOptions]);
 
     useEffect(() => {
-        loop();
-    }, [ loop ]);
+        if(!isInterfaceRedrawRequired) {
+            return;
+        }
+        drawLazyBrush();
+    }, [ drawLazyBrush, isInterfaceRedrawRequired ]);
+
+    const redrawImage = useCallback(() => {
+        if(!image || !image.complete || !canvasContextCollection.grid) {
+            return;
+        }
+        drawImageToCanvas({ ctx: canvasContextCollection.grid.context, img: image });
+    }, [ canvasContextCollection, image ]);
+
+    const redrawGrid = useCallback(() => {
+        drawGrid(canvasContextCollection.grid!.context, coordinateSystem, effectiveDrawingOptions);
+        redrawImage();
+        setIsGridRedrawRequired(false);
+    }, [canvasContextCollection, coordinateSystem, effectiveDrawingOptions, redrawImage]);
+
+    useEffect(() => {
+        if(!isGridRedrawRequired) {
+            return;
+        }
+        redrawGrid();
+    }, [ redrawGrid, isGridRedrawRequired ]);
+
+    const copyTempCanvasToDrawingCanvas = useCallback(() => {
+        copyCanvas(canvasContextCollection.temp!, canvasContextCollection.drawing!);
+        clearCanvas(canvasContextCollection.temp!.context);
+    }, [ canvasContextCollection ]);
+
+    const drawLines = useCallback((lines: Line[], { immediate = false} = {}) => {
+        clearCanvas(canvasContextCollection.temp!.context);
+        drawLinesToCanvas(
+            canvasContextCollection.temp!.context, 
+            lines, 
+            effectiveDrawingOptions, 
+            copyTempCanvasToDrawingCanvas, 
+            { immediate });
+    }, [canvasContextCollection, effectiveDrawingOptions, copyTempCanvasToDrawingCanvas ]);
+
+    useEffect(() => {
+        if(!isDrawingRedrawRequired) {
+            return;
+        }
+        clearCanvas(canvasContextCollection.drawing!.context);
+        drawLines(drawing.lines, { immediate: true });
+        setIsDrawingRedrawRequired(false);
+    }, [ canvasContextCollection, drawLines, drawing, isDrawingRedrawRequired ])
 
     const handleCanvasResize = useCallback((entries: { contentRect: { width: number, height: number} }[]) => {
         if(entries.length === 0) {
             return;
         }
-        setDeferRedrawOnViewChange(true);
-        try {
-            const entryContentRect = last(entries)!.contentRect;
-            const newCanvasSize: Size = { width: entryContentRect.width, height: entryContentRect.height };
-            const { width, height } = newCanvasSize;
-            setCanvasSize(canvasContextCollection.interface!.canvas, width, height);
-            setCanvasSize(canvasContextCollection.drawing!.canvas, width, height);
-            setCanvasSize(canvasContextCollection.temp!.canvas, width, height);
-            setCanvasSize(canvasContextCollection.grid!.canvas, width, height);
+        const entryContentRect = last(entries)!.contentRect;
+        const newCanvasSize: Size = { width: entryContentRect.width, height: entryContentRect.height };
+        const { width, height } = newCanvasSize;
+        setCanvasSize(canvasContextCollection.interface!.canvas, width, height);
+        setCanvasSize(canvasContextCollection.drawing!.canvas, width, height);
+        setCanvasSize(canvasContextCollection.temp!.canvas, width, height);
+        setCanvasSize(canvasContextCollection.grid!.canvas, width, height);
+        coordinateSystem.documentSize = newCanvasSize;
+        drawing.rescale(newCanvasSize);
 
-            coordinateSystem.documentSize = newCanvasSize;
-            drawGrid(canvasContextCollection.grid!.context, coordinateSystem, effectiveDrawingOptions);
-            if(imgSrc) {
-                drawImage(imgSrc);
-            }
-            loop({ once: true });
-            drawing.rescale(newCanvasSize);
-        } finally {
-            setDeferRedrawOnViewChange(false);
-        }
-    }, [ canvasContextCollection, coordinateSystem, drawing, effectiveDrawingOptions, drawImage, imgSrc, loop ]);
+        setIsGridRedrawRequired(true);
+        setIsDrawingRedrawRequired(true);
+        setIsInterfaceRedrawRequired(true);
+    }, [canvasContextCollection, coordinateSystem, drawing]);
 
     useEffect(() => {
         if(!container.current) {
@@ -176,19 +210,17 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
     const handleDrawStart = useCallback((e: MouseOrTouchEvent) => {
         const newState = userInputStateMachine.handleDrawStart(e, tools);
         setUserInputStateMachine(newState);
-        setHasMouseMoved(true);
     }, [ userInputStateMachine, tools ]);
 
     const handleDrawMove = useCallback((e: MouseOrTouchEvent) => {
         const newState = userInputStateMachine.handleDrawMove(e, tools);
         setUserInputStateMachine(newState);
-        setHasMouseMoved(true);
-    }, [ userInputStateMachine, tools ]);
+        drawLazyBrush();
+    }, [ userInputStateMachine, tools, drawLazyBrush ]);
 
     const handleDrawEnd = useCallback((e: MouseOrTouchEvent) => {
         const newState = userInputStateMachine.handleDrawEnd(e, tools);
         setUserInputStateMachine(newState);
-        setHasMouseMoved(true);
     }, [ userInputStateMachine, tools ]);
 
     useEffect(() => {
@@ -206,9 +238,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
     }, [ canvasContextCollection, handleWheel ]);
 
     const onPointAdded = useCallback((lineInProgress: Line) => {
-        if(lineInProgress.points.length < 2) {
-            return;
-        }
         drawPoints(canvasContextCollection.temp!.context, lineInProgress.points, { ...effectiveDrawingOptions });
     }, [ canvasContextCollection, effectiveDrawingOptions ]);
 
@@ -218,20 +247,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
             drawing.unregisterOnPointAddedCallback(onPointAdded);
         }
     }, [ drawing, onPointAdded ]);
-
-    const copyTempCanvasToDrawingCanvas = useCallback(() => {
-        copyCanvas(canvasContextCollection.temp!, canvasContextCollection.drawing!);
-        clearCanvas(canvasContextCollection.temp!.context);
-    }, [ canvasContextCollection ]);
-
-    const drawLines = useCallback((lines: Line[], { immediate = false} = {}) => {
-        drawLinesToCanvas(
-            canvasContextCollection.temp!.context, 
-            lines, 
-            effectiveDrawingOptions, 
-            copyTempCanvasToDrawingCanvas, 
-            { immediate });
-    }, [canvasContextCollection, effectiveDrawingOptions, copyTempCanvasToDrawingCanvas ]);
 
     const onNewLine = useCallback(( /*newLine: Line */) => {
         copyTempCanvasToDrawingCanvas();
@@ -269,13 +284,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
     }, [ drawing, onLinesChanges ]);
 
     useEffect(() => {
-        if(!imgSrc) {
-            return;
-        }
-        drawImage(imgSrc);
-    }, [ imgSrc, drawImage ]);
-
-    useEffect(() => {
         if(!zoomExtents) {
             return;
         }
@@ -284,17 +292,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
             coordinateSystem.resetView();
         }
     }, [ coordinateSystem, zoomExtents, enablePanAndZoom ]);
-
-    useEffect(() => {
-        setIsRedrawRequired(true);
-    }, [ props ]);
-
-    const redrawImage = useCallback(() => {
-        if(!image || !image.complete || !canvasContextCollection.grid) {
-            return;
-        }
-        drawImageToCanvas({ ctx: canvasContextCollection.grid.context, img: image });
-    }, [ canvasContextCollection, image ]);
 
     const applyView: ViewListener = useCallback(() => {
         if (!canvasContextCollection.drawing) {
@@ -311,22 +308,10 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
                 ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
             });
 
-        if(deferRedrawOnViewChange) {
-            drawGrid(canvasContextCollection.grid!.context, coordinateSystem, effectiveDrawingOptions);
-            redrawImage();
-            loop({ once: true });
-            drawLines(drawing.lines, { immediate: true });
-        }
-    }, [
-        coordinateSystem, 
-        canvasContextCollection,
-        deferRedrawOnViewChange, 
-        drawLines, 
-        drawing, 
-        effectiveDrawingOptions, 
-        loop, 
-        redrawImage
-    ]);
+        setIsGridRedrawRequired(true);
+        setIsDrawingRedrawRequired(true);
+        setIsInterfaceRedrawRequired(true);
+    }, [coordinateSystem, canvasContextCollection]);
 
     useEffect(() => {
         coordinateSystem.attachViewChangeListener(applyView);
@@ -361,6 +346,7 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
                             context: canvas.getContext("2d")!
                         };
                     }}
+                    id={`canvas-${canvasType}`}
                     className="canvas"
                     onMouseDown={isInterface ? handleDrawStart : undefined}
                     onMouseMove={isInterface ? handleDrawMove : undefined}

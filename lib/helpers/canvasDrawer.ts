@@ -190,6 +190,9 @@ export const drawPoints = (
     tempContext: CanvasRenderingContext2D,
     points: Point[],
     drawOptions: CanvasDrawOptions) => {
+    if(points.length === 0) {
+        return;
+    }
 
     tempContext.lineJoin = "round";
     tempContext.lineCap = "round";
@@ -199,7 +202,7 @@ export const drawPoints = (
     tempContext.lineWidth = drawOptions.brushRadius * 2;
 
     let p1 = points[0];
-    let p2 = points[1];
+    let p2 = points.length >= 2 ? points[1] : points[0];
 
     tempContext.moveTo(p2.x, p2.y);
     tempContext.beginPath();
@@ -224,39 +227,42 @@ export const drawLines = (
     drawOptions: CanvasDrawOptions, 
     onLineDrawn: () => void,
     { immediate = false} = {}) => {
-    
-    for (const line of lines) {
-        const { points, brushColor, brushRadius } = line;
-        const lineDrawOptions: CanvasDrawOptions = {
-            ...drawOptions,
-            brushColor: brushColor,
-            brushRadius: brushRadius
-        };
-        if(immediate) {
-            // Draw the points
+
+    if(immediate) {
+        for (const line of lines) {
+            const { points, brushColor, brushRadius } = line;
+            const lineDrawOptions: CanvasDrawOptions = {
+                ...drawOptions,
+                brushColor: brushColor,
+                brushRadius: brushRadius
+            };
             drawPoints(ctx, points, lineDrawOptions);
             onLineDrawn();
-        } else {
-            let t = 0;
-            const deltaT = immediate 
-                ? 0 
-                : drawOptions.drawTimeStepSizeInMilliseconds;
-
-            // Use timeout to draw
+        }
+    } else {
+        let t = 0;
+        const deltaT = immediate 
+            ? 0 
+            : drawOptions.drawTimeStepSizeInMilliseconds;
+        for (const line of lines) {
+            const { points, brushColor, brushRadius } = line;
+            const lineDrawOptions: CanvasDrawOptions = {
+                ...drawOptions,
+                brushColor: brushColor,
+                brushRadius: brushRadius
+            };
             for (let i = 1; i < points.length; i++) {
-                t += deltaT;
                 setTimeout(() => {
                     drawPoints(
                         ctx,
                         points.slice(0, i + 1),
                         lineDrawOptions);
                 }, t);
+                t += deltaT;
             }
-            
-            t += deltaT;
             setTimeout(() => {
                 onLineDrawn();
-            });
+            }, t);
         }
     }
 }
