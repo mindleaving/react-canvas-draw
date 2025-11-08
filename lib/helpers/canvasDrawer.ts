@@ -74,7 +74,8 @@ export const drawImageToCanvas = ({ ctx, img, x, y, w, h, offsetX, offsetY }: Dr
 export const drawGrid = (
     ctx: CanvasRenderingContext2D,
     coordinateSystem: ICoordinateSystem,
-    drawOptions: CanvasDrawOptions
+    drawOptions: CanvasDrawOptions,
+    { attempt = 1} = {}
 ) => {
     const gridOptions = drawOptions.grid;
     if (gridOptions.hideGrid) {
@@ -85,6 +86,11 @@ export const drawGrid = (
 
     const canvasBounds = coordinateSystem.canvasBounds;
     if(!canvasBounds) {
+        if(attempt < 2) {
+            // HACK: Try again in a moment.
+            // TODO: Better handling of canvas rescaling (which causes interface canvas to remount and therefore coordinateSystem.canvas = undefinded)
+            setTimeout(() => drawGrid(ctx, coordinateSystem, drawOptions, { attempt: attempt + 1}), 100);
+        }
         return;
     }
     const { gridSizeX, gridSizeY } = gridOptions;

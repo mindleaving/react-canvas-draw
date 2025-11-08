@@ -40,9 +40,12 @@ export const GridCanvas = (props: GridCanvasProps) => {
         if(!context) {
             return;
         }
-        drawGrid(context, coordinateSystem, drawOptions);
-        redrawImage();
-    }, [ context, coordinateSystem, drawOptions, redrawImage]);
+        if(imgSrc) {
+            redrawImage();
+        } else {
+            drawGrid(context, coordinateSystem, drawOptions);
+        }
+    }, [ context, coordinateSystem, drawOptions, imgSrc, redrawImage]);
 
     useEffect(() => {
         if(!canvas) {
