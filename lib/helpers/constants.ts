@@ -9,7 +9,7 @@ export const DefaultDrawOptions: CanvasDrawOptions = {
         radius: 12,
         color: "#0a0302"
     },
-    mouseZoomFactor: 0.01,
+    mouseZoomFactor: 0.002,
     backgroundColor: "#FFF",
     disabled: false,
     clampLinesToDocument: false,

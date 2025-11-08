@@ -2,7 +2,7 @@ import './App.css';
 import { CanvasDraw } from '../lib/CanvasDraw';
 import { OngoingDrawing } from '../lib/helpers/OngoingDrawing';
 import { DefaultCanvasHeight, DefaultCanvasWidth } from '../lib/helpers/constants';
-import type { CanvasDrawOptions, Size } from '../lib/types/frontendTypes';
+import type { Size } from '../lib/types/frontendTypes';
 import { useEffect, useMemo, useState } from 'react';
 
 const imageUrls = [
@@ -65,17 +65,22 @@ const App = () => {
             width="160px"
             height="30px"
         />
-        <h2>default</h2>
+        <h2>Default</h2>
         <p>
-            This is a simple <span>{`<CanvasDraw />`}</span> component with
+            This is a simple <span>{`<CanvasDraw drawing={drawing} />`}</span> component with
             default values.
+        </p>
+        <p>
+            You need to provide a drawing object, which contains the lines and
+            lets you manipulate the drawing. Create a drawing with <span>{`drawing = new OngoingDrawing(DefaultCanvasSize)`}</span>.
+            Remember to memorize it, e.g. <span>{`const drawing = useMemo(() => new OngoingDrawing(DefaultCanvasSize), [])`}</span>.
         </p>
         <p>Try it out! Draw on this white canvas:</p>
         <CanvasDraw drawing={defaultDrawing} />
         <h2>Custom Brush-Color</h2>
         <p>
             Let's spice things up by using custom brush colors{" "}
-            <span>{`<CanvasDraw brushColor={color} />`}</span>. We
+            <span>{`<CanvasDraw drawing={drawing} drawOptions={{ brushColor: color }} />`}</span>. We
             randomly change them every 2 seconds. But you could easily use a
             color-picker!
         </p>
@@ -114,14 +119,14 @@ const App = () => {
             imgSrc={backgroundImgSrc}
         />
         <h2>Hide UI</h2>
-        <p>To hide the UI elements, set the `hideInterface` prop. You can also hide the grid with the `hideGrid` prop.</p>
+        <p>To hide the UI elements, set the `hideInterface` draw option. You can also hide the grid with the `grid.hideGrid` draw option.</p>
         <CanvasDraw drawing={hideUiDrawing} drawOptions={{ hideInterface: true, grid: { hideGrid: true }}} />
         <h2>Zoom & Pan</h2>
         <p>
-            Set the <span>enablePanAndZoom</span> prop to enable mouse scrolling
+            Set the <span>enablePanAndZoom</span> draw option to enable mouse scrolling
             and panning (using Ctrl), pinch zooming, and two-finger panning. If
             you want to ensure that all lines stay within the bounds of the
-            canvas, set the <span>clampLinesToDocument</span> property.
+            canvas, set the <span>clampLinesToDocument</span> draw option.
         </p>
         <CanvasDraw
             drawing={zoomPanDrawing}
@@ -138,9 +143,9 @@ const App = () => {
         <p>
             This part got me most excited. Very easy to use saving and loading of
             drawings. It even comes with a customizable loading speed to control
-            whether your drawing should load instantly (loadTimeOffset = 0) or
-            appear after some time (loadTimeOffset &gt; 0){" "}
-            <span>{`<CanvasDraw loadTimeOffset={10} />`}</span>
+            whether your drawing should load instantly (drawTimeStepSizeInMilliseconds = 0) or
+            appear after some time (drawTimeStepSizeInMilliseconds &gt; 0){" "}
+            <span>{`<CanvasDraw drawing={drawing} drawOptions={{ drawTimeStepSizeInMilliseconds: 10 }} />`}</span>
         </p>
         <p>Try it out! Draw something, hit "Save" and then "Load".</p>
         <div className="tools">
@@ -219,16 +224,14 @@ const App = () => {
                 caternary: {
                     radius: lazyRadius
                 }
-            } as Partial<CanvasDrawOptions>}
+            }}
         />
         <p>
             The following is a disabled canvas with a hidden grid that we use to
             load & show your saved drawing.
         </p>
         <p>
-            Load what you saved previously into the following canvas. Either by
-            calling `loadSaveData()` on the component's reference or passing it
-            the `saveData` prop:
+            Load what you saved previously into the following canvas by calling `drawing.load(saveData)`:
         </p>
         <div className="tools" style={{ height: '60px' }}>
             <button
@@ -260,7 +263,7 @@ const App = () => {
         </p>
         <p>
             That's it for now! Take a look at the{" "}
-            <a href="https://github.com/mBeierl/react-canvas-draw/tree/master/demo/src">
+            <a href="https://github.com/mindleaving/react-canvas-draw/tree/master/src">
                 source code of these examples
             </a>
             .

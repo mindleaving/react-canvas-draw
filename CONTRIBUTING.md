@@ -17,7 +17,7 @@ please follow the [all-contributors bot instructions](https://allcontributors.or
 
 ## Demo Development Server
 
-- `npm start` will run a development server with the component's demo app at [http://localhost:3000](http://localhost:3000) with hot module reloading.
+- `npm run dev` will run a development server with the component's demo app at [http://localhost:5173](http://localhost:5173) with hot module reloading.
 
 ## Running Tests
 

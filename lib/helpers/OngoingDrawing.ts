@@ -24,7 +24,6 @@ export class OngoingDrawing implements IOngoingDrawing {
                 brushRadius: drawOptions.brushRadius,
                 points: [ point ]
             }
-            this.lineInProgress.points.push();
             this.onPointAdded();
             return;
         }
@@ -34,7 +33,7 @@ export class OngoingDrawing implements IOngoingDrawing {
             this.onPointAdded();
         }
     }
-    finishLineInProgress = (drawOptions: CanvasDrawOptions) => {
+    finishLineInProgress = () => {
         if(!this.lineInProgress) {
             return;
         }
@@ -45,8 +44,6 @@ export class OngoingDrawing implements IOngoingDrawing {
                 y: singlePoint.y + 1
             });
         }
-        this.lineInProgress.brushColor = drawOptions.brushColor;
-        this.lineInProgress.brushRadius = drawOptions.brushRadius;
         this.lines.push(this.lineInProgress);
         this.onLineCompleted(this.lineInProgress);
         this.lineInProgress = undefined;
@@ -166,6 +163,9 @@ export class OngoingDrawing implements IOngoingDrawing {
     }
     
     rescale = (newCanvasSize: Size) => {
+        if(this.canvasSize.width === newCanvasSize.width && this.canvasSize.height === newCanvasSize.height) {
+            return;
+        }
         const savedDrawing: SavedDrawing = {
             width: this.canvasSize.width,
             height: this.canvasSize.height,
@@ -183,6 +183,7 @@ export class OngoingDrawing implements IOngoingDrawing {
         this.lineInProgress = undefined;
         this.lines = rescaledDrawing.lines;
         this.erasedLines = rescaledErasedLines.lines;
+        this.onLinesChanged();
     }
 
 }

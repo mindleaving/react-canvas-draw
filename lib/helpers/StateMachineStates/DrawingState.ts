@@ -51,7 +51,7 @@ export class DrawingState implements IStateMachineState {
 
         // Draw to this end pos
         this.handleDrawMove(e, tools);
-        this.drawing.finishLineInProgress(tools.drawOptions);
+        this.drawing.finishLineInProgress();
 
         return new DefaultState(this.drawing);
     };

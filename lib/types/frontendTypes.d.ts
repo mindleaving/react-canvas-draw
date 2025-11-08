@@ -180,7 +180,7 @@ export interface IOngoingDrawing {
     erasedLines: Line[];
 
     addToLineInProgress: (point: Point, drawOptions: CanvasDrawOptions) => void;
-    finishLineInProgress: (drawOptions: CanvasDrawOptions) => void;
+    finishLineInProgress: () => void;
 
     registerOnPointAddedCallback: (callback: OnPointAddedCallback) => void;
     unregisterOnPointAddedCallback: (callback: OnPointAddedCallback) => void;
