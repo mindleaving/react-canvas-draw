@@ -1,3 +1,4 @@
+import type { WheelEvent } from "react";
 import type { CanvasDrawTools, IOngoingDrawing, IStateMachineState, MouseOrTouchEvent } from "../../types/frontendTypes";
 import { clientPointFromEvent, viewPointFromEvent } from "../stateMachineHelpers";
 import { DisabledState } from "./DisabledState";

@@ -1,7 +1,7 @@
 import './styles/react-canvas-draw.css';
 import { LazyBrush } from "lazy-brush";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import makePassiveEventOption from "./helpers/eventHelpers";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type WheelEvent } from "react";
 import { DefaultState } from "./helpers/StateMachineStates/DefaultState";
 import type { CanvasContextCollection, CanvasDrawOptions, CanvasDrawTools, ICoordinateSystem, IOngoingDrawing, IStateMachineState, Line, MouseOrTouchEvent, PartialDrawOptions, ViewListener } from "./types/frontendTypes";
 import CoordinateSystem from "./helpers/CoordinateSystem";
@@ -73,11 +73,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
     const [ userInputStateMachine, setUserInputStateMachine ] = useState<IStateMachineState>(() => new DefaultState(drawing));
     const container = useRef<HTMLDivElement>(null);
 
-    const clearLines = useCallback(() => {
-        clearCanvas(canvasContextCollection.drawing!.context);
-        clearCanvas(canvasContextCollection.temp!.context);
-    }, [ canvasContextCollection ]);
-
     useEffect(() => {
         setUserInputStateMachine(new DefaultState(drawing));
     }, [ drawing ]);
@@ -147,10 +142,6 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
         redrawInterfaceCanvas();
     }, [redrawGridCanvas, redrawDrawingCanvas, redrawInterfaceCanvas]);
 
-    // useEffect(() => {
-    //     redrawAll();
-    // }, [ redrawAll ]);
-
     useEffect(() => {
         const width = effectiveCanvasWidth;
         const height = effectiveCanvasHeight;
@@ -159,40 +150,12 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
         setCanvasSize(canvasContextCollection.temp!.canvas, width, height);
         setCanvasSize(canvasContextCollection.grid!.canvas, width, height);
         drawing.rescale({ width, height });
+        redrawAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ canvasContextCollection, drawing, effectiveCanvasWidth, effectiveCanvasHeight ]);
 
-    // TODO: Why is this code important?
-    // const handleCanvasResize = useCallback((entries: ResizeObserverEntry[]) => {
-    //     if(entries.length === 0) {
-    //         return;
-    //     }
-    //     const entryContentRect = last(entries)!.contentRect;
-    //     const newCanvasSize: Size = { width: entryContentRect.width, height: entryContentRect.height };
-    //     const { width, height } = newCanvasSize;
-    //     setCanvasSize(canvasContextCollection.interface!.canvas, width, height);
-    //     setCanvasSize(canvasContextCollection.drawing!.canvas, width, height);
-    //     setCanvasSize(canvasContextCollection.temp!.canvas, width, height);
-    //     setCanvasSize(canvasContextCollection.grid!.canvas, width, height);
-    //     coordinateSystem.documentSize = newCanvasSize;
-    //     drawing.rescale(newCanvasSize);
-
-    //     redrawAll();
-    // }, [canvasContextCollection, coordinateSystem, drawing, redrawAll]);
-
-    // useEffect(() => {
-    //     if(!container.current) {
-    //         return;
-    //     }
-    //     const containerLocalCopy = container.current;
-    //     const observer = new ResizeObserver(handleCanvasResize);
-    //     observer.observe(containerLocalCopy);
-    //     return () => {
-    //         observer.unobserve(containerLocalCopy);
-    //     }
-    // }, [ handleCanvasResize, container ]);
-
-    const handleWheel = useCallback((e: WheelEvent) => {
-        const newState = userInputStateMachine.handleMouseWheel(e, tools);
+    const handleWheel = useCallback((e: WheelEvent | globalThis.WheelEvent) => {
+        const newState = userInputStateMachine.handleMouseWheel(e as WheelEvent, tools);
         setUserInputStateMachine(newState);
     }, [ userInputStateMachine, tools ]);
 
@@ -252,6 +215,11 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
             drawing.unregisterOnLineCompletedCallback(onNewLine);
         }
     }, [ drawing, onNewLine ]);
+
+    const clearLines = useCallback(() => {
+        clearCanvas(canvasContextCollection.drawing!.context);
+        clearCanvas(canvasContextCollection.temp!.context);
+    }, [ canvasContextCollection ]);
 
     const onLineRemoved = useCallback((removedLine: Line, remainingLines: Line[]) => {
         clearLines();

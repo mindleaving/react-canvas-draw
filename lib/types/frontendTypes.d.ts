@@ -1,5 +1,5 @@
 import type { LazyBrush } from "lazy-brush";
-import type { MouseEvent, TouchEvent } from "react";
+import type { MouseEvent, TouchEvent, WheelEvent } from "react";
 
 export interface Point {
     x: number;

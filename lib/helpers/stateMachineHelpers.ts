@@ -1,4 +1,4 @@
-import type { MouseEvent, Touch, TouchEvent } from "react";
+import type { MouseEvent, Touch, TouchEvent, WheelEvent } from "react";
 import type { ClientPoint, ICoordinateSystem, IStateMachineState, MouseOrTouchEvent } from "../types/frontendTypes";
 
 export const TOUCH_SLOP = 10;
