@@ -77,16 +77,22 @@ export const drawGrid = (
     drawOptions: CanvasDrawOptions
 ) => {
     const gridOptions = drawOptions.grid;
-    if (gridOptions.hideGrid) return;
+    if (gridOptions.hideGrid) {
+        return;
+    }
 
     clearCanvas(ctx);
 
-    const gridSize = 25;
-    const { viewMin, viewMax } = coordinateSystem.canvasBounds!;
-    const minx = Math.floor(viewMin.x / gridSize - 1) * gridSize;
-    const miny = Math.floor(viewMin.y / gridSize - 1) * gridSize;
-    const maxx = viewMax.x + gridSize;
-    const maxy = viewMax.y + gridSize;
+    const canvasBounds = coordinateSystem.canvasBounds;
+    if(!canvasBounds) {
+        return;
+    }
+    const { gridSizeX, gridSizeY } = gridOptions;
+    const { viewMin, viewMax } = canvasBounds;
+    const minx = Math.floor(viewMin.x / gridSizeX - 1) * gridSizeX;
+    const miny = Math.floor(viewMin.y / gridSizeY - 1) * gridSizeY;
+    const maxx = viewMax.x + gridSizeX;
+    const maxy = viewMax.y + gridSizeY;
 
     ctx.beginPath();
     ctx.setLineDash([5, 1]);
@@ -187,39 +193,37 @@ export const drawInterface = (
     ctx.fill();
 };
 export const drawPoints = (
-    tempContext: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D,
     points: Point[],
     drawOptions: CanvasDrawOptions) => {
     if(points.length === 0) {
         return;
     }
 
-    tempContext.lineJoin = "round";
-    tempContext.lineCap = "round";
-    tempContext.strokeStyle = drawOptions.brushColor;
-
-    clearCanvas(tempContext);
-    tempContext.lineWidth = drawOptions.brushRadius * 2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.strokeStyle = drawOptions.brushColor;
+    ctx.lineWidth = drawOptions.brushRadius * 2;
 
     let p1 = points[0];
     let p2 = points.length >= 2 ? points[1] : points[0];
 
-    tempContext.moveTo(p2.x, p2.y);
-    tempContext.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.beginPath();
 
     for (let i = 1, len = points.length; i < len; i++) {
         // we pick the point between pi+1 & pi+2 as the
         // end point and p1 as our control point
         const midPoint = midPointBetween(p1, p2);
-        tempContext.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
+        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
         p1 = points[i];
         p2 = points[i + 1];
     }
     // Draw last line as a straight line while
     // we wait for the next point to be able to calculate
     // the bezier control point
-    tempContext.lineTo(p1.x, p1.y);
-    tempContext.stroke();
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
 };
 export const drawLines = (
     ctx: CanvasRenderingContext2D,

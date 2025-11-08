@@ -213,3 +213,9 @@ export interface CanvasContextCollection {
     [key:string]: CanvasWithContext | undefined;
 }
 export type GenericObject = { [key: string]: unknown };
+export interface CanvasProps {
+    canvasWidth: number;
+    canvasHeight: number;
+    coordinateSystem: ICoordinateSystem;
+    drawOptions: CanvasDrawOptions;
+}

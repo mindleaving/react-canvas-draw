@@ -1,7 +1,8 @@
 import './App.css';
-import { CanvasDraw, OngoingDrawing, DefaultCanvasHeight, DefaultCanvasWidth } from '../';
-import type { Size } from '../lib/types/frontendTypes';
+
 import { useEffect, useMemo, useState } from 'react';
+import { CanvasDraw, DefaultCanvasHeight, DefaultCanvasWidth, OngoingDrawing } from '../lib/main';
+import type { Size } from '../lib/types/frontendTypes';
 
 const imageUrls = [
     "https://upload.wikimedia.org/wikipedia/commons/a/a1/Nepalese_Mhapuja_Mandala.jpg",
