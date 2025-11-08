@@ -130,7 +130,6 @@ export interface View {
     y: number;
 }
 export interface ICoordinateSystem {
-    scale: number;
     x: number;
     y: number;
     scale: number;

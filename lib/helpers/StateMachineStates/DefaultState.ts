@@ -48,7 +48,7 @@ export class DefaultState implements IStateMachineState {
         }
     };
 
-    handleDrawEnd = (e: MouseOrTouchEvent, tools: CanvasDrawTools): IStateMachineState => {
+    handleDrawEnd = (_: MouseOrTouchEvent, tools: CanvasDrawTools): IStateMachineState => {
         return tools.drawOptions.disabled ? (new DisabledState(this.drawing)) : this;
     };
 };

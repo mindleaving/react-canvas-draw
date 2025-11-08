@@ -1,7 +1,5 @@
 import './App.css';
-import { CanvasDraw } from '../lib/CanvasDraw';
-import { OngoingDrawing } from '../lib/helpers/OngoingDrawing';
-import { DefaultCanvasHeight, DefaultCanvasWidth } from '../lib/helpers/constants';
+import { CanvasDraw, OngoingDrawing, DefaultCanvasHeight, DefaultCanvasWidth } from '../';
 import type { Size } from '../lib/types/frontendTypes';
 import { useEffect, useMemo, useState } from 'react';
 

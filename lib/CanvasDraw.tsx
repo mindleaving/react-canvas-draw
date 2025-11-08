@@ -221,7 +221,7 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
         clearCanvas(canvasContextCollection.temp!.context);
     }, [ canvasContextCollection ]);
 
-    const onLineRemoved = useCallback((removedLine: Line, remainingLines: Line[]) => {
+    const onLineRemoved = useCallback((_: Line, remainingLines: Line[]) => {
         clearLines();
         drawLines(remainingLines, { immediate: true });
     }, [ clearLines, drawLines ]);
@@ -306,8 +306,7 @@ export const CanvasDraw = (props: CanvasDrawProps) => {
                             context: canvas.getContext("2d")!
                         };
                     }}
-                    id={`canvas-${canvasType}`}
-                    className="canvas"
+                    className={`react-canvas-draw-canvas react-canvas-draw-canvas-${canvasType}`}
                     onMouseDown={isInterface ? handleDrawStart : undefined}
                     onMouseMove={isInterface ? handleDrawMove : undefined}
                     onMouseUp={isInterface ? handleDrawEnd : undefined}
