@@ -1,17 +1,15 @@
 import expect from "expect";
-import CoordinateSystem from "../src/coordinateSystem";
+import { describe, beforeEach, it } from "node:test";
+import CoordinateSystem from '../lib/helpers/CoordinateSystem';
 
 describe("CoordinateSystem", () => {
-  let subject;
+  let subject: CoordinateSystem;
 
   beforeEach(() => {
-    subject = new CoordinateSystem({
-      scaleExtents: { min: 0, max: 100 },
-      documentSize: { width: 10, height: 10 }
-    });
+    subject = new CoordinateSystem({ min: 0, max: 100 }, { width: 10, height: 10 });
     subject.canvas = {
       getBoundingClientRect: () => ({ left: 0, top: 0, right: 10, bottom: 10 }),
-    };
+    } as HTMLCanvasElement;
   });
 
   describe("#scaleAtClientPoint", () => {
