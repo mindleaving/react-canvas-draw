@@ -1,3 +1,8 @@
+<h1>This documentation is outdated!</h1>
+<div>
+  The code has been rewritten for React 19, Typescript and Vite, but not all workflows have been updated. See <a href="https://github.com/mindleaving/react-canvas-draw/pull/1">pull request 1</a> for known issues and comments.
+</div>
+
 <div align="center">
 <h1>React Canvas Draw</h1>
 </div>
